@@ -1,4 +1,8 @@
 import {
+  CARD_KEY_ACE_CLUBS,
+  CARD_KEY_ACE_DIAMONDS,
+  CARD_KEY_ACE_HEARTS,
+  CARD_KEY_ACE_SPADES,
   DECK_ACES,
   DECK_DETAILS,
   DECK_EMPTY_SPACE,
@@ -6,6 +10,10 @@ import {
   DECK_EMPTY_SPACE_HASH,
   DECK_ROW_END_INDICES,
   DECK_ROW_START_INDICES,
+  SUIT_CLUBS_KEY,
+  SUIT_DIAMONDS_KEY,
+  SUIT_HEARTS_KEY,
+  SUIT_SPADES_KEY,
 } from '../constants';
 
 export const shuffle = (unshuffled: string[]) =>
@@ -49,6 +57,16 @@ export const findEmptyPositions = (deck: string[]) =>
     }
     return acc;
   }, []);
+
+export const findIndexByCardKey = (deck: string[]) => (card: string) =>
+  deck.findIndex((item: string) => item === card);
+
+export const makeFileHashKey = (deck: string[]) =>
+  makeHashKey(deck)
+    .replace(new RegExp(SUIT_CLUBS_KEY, 'g'), 'c')
+    .replace(new RegExp(SUIT_DIAMONDS_KEY, 'g'), 'd')
+    .replace(new RegExp(SUIT_HEARTS_KEY, 'g'), 'h')
+    .replace(new RegExp(SUIT_SPADES_KEY, 'g'), 's');
 
 export const makeHashKey = (deck: string[]) =>
   deck.reduce(
@@ -95,3 +113,6 @@ export const getIndexOfPreviousCard =
   };
 
 export const getCardAt = (deck: string[]) => (index: number) => deck[index];
+
+export const isIndexAStartOfRowIndex = (index: number) =>
+  DECK_ROW_START_INDICES.includes(index);

@@ -1,1 +1,9 @@
 export const CARD_KING_VALUE = 13;
+export const CARD_KEY_ACE_CLUBS = '♣A';
+export const CARD_KEY_ACE_DIAMONDS = '♦A';
+export const CARD_KEY_ACE_HEARTS = '♥A';
+export const CARD_KEY_ACE_SPADES = '♠A';
+export const CARD_KEY_TWO_CLUBS = '♣2';
+export const CARD_KEY_TWO_DIAMONDS = '♦2';
+export const CARD_KEY_TWO_HEARTS = '♥2';
+export const CARD_KEY_TWO_SPADES = '♠2';
