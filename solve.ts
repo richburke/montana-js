@@ -1,4 +1,6 @@
+import fs from 'fs';
 import {
+  DECK_FULL,
   DECK_GOAL,
   display,
   filterValidMovePositions,
@@ -7,89 +9,25 @@ import {
   findIndexByCardKey,
   getCardAt,
   getCardDetails,
-  getEndOfRowIndex,
   getIndexOfPreviousCard,
   getKeyFromDetails,
   getNextHighestCard,
-  getStartOfRowIndex,
-  getSuitAndValueFromDetails,
-  getValueOf,
   isGoalState,
   isIndexAStartOfRowIndex,
   log,
   makeFileHashKey,
-  makeHashKey,
+  replaceAces,
+  shuffle,
   swap,
 } from './core';
 
-const shuffled = [
-  '♠6',
-  '♠2',
-  null,
-  '♠Q',
-  '♠4',
-  '♥Q',
-  '♣J',
-  '♣9',
-  '♥10',
-  '♦9',
-  '♥7',
-  '♥6',
-  '♥9',
-  '♦K',
-  '♣6',
-  '♥5',
-  '♠3',
-  '♣8',
-  '♣4',
-  '♣7',
-  '♥J',
-  '♥2',
-  '♠5',
-  null,
-  '♥K',
-  '♦5',
-  '♦10',
-  '♦6',
-  null,
-  '♦8',
-  '♦7',
-  '♠10',
-  '♥3',
-  '♦4',
-  '♠K',
-  '♥8',
-  '♦3',
-  null,
-  '♣3',
-  '♣2',
-  '♦2',
-  '♠J',
-  '♣K',
-  '♣Q',
-  '♠9',
-  '♥4',
-  '♦J',
-  '♣10',
-  '♠8',
-  '♣5',
-  '♠7',
-  '♦Q',
-];
-// console.log('>', isGoalState(shuffled, DECK_GOAL));
+const FILE_RESULTS = './results.json';
 
 /**
  * @todo
- * - write results to JSON files
- *   - results/<file hash of start deck>.json
- *   - key
- *   - startDeck
- *   - deck
- *   - results: [{
- *        timestamp,
- *        isSolved,
- *        completedDeck
- *     }]
+ * - add the ability to pass in a key, and attempt to solve again
+ *   - solve-for.ts
+ *   - solve.ts
  * - Make into iteration
  * - Add choice logic
  *   - Prioritize spaces in the first position.
@@ -166,27 +104,44 @@ const solve = (deck: string[]) => {
   return solve(deck);
 };
 
-const result = solve(shuffled);
-console.log('======');
-console.log(display(result));
-console.log(makeHashKey(result));
-console.log(makeFileHashKey(result));
-console.log(isGoalState(result, DECK_GOAL) ? 'Success! :)' : 'Failed :(');
-// console.log('>', y.map(getStartOfRowIndex));
-// console.log('>', y.map(getEndOfRowIndex));
-// It seems like a Monad might be good here.
-// y.map(getIndexOfPreviousCard(shuffled))
-//   .filter((v) => v !== -1)
-//   .map(getCardAt(shuffled))
-//   .map(getCardDetails)
-//   .map(log)
-//   .map(getNextHighestCard)
-//   .map(log)
-//   .map(getKeyFromDetails)
-//   .map(log)
-//   .map(findIndexByCardKey(shuffled))
-//   .map(log);
+const main = (numAttempts: number) => {
+  do {
+    // This flipping and reshuffling is to make the shuffling be more random. See
+    // the notes on the shuffle() function.
+    const startingState = replaceAces(shuffle(shuffle(DECK_FULL).reverse()));
+    const fileKey = makeFileHashKey(startingState);
+    const result = solve(startingState);
 
-// .map(getSuitAndValueFromDetails),
-// Find index by suit and value
-// Get next card in sequence
+    console.log('======');
+    console.log(display(result));
+    console.log(isGoalState(result, DECK_GOAL) ? 'Success! :)' : 'Failed :(');
+
+    let summaryData = {};
+    if (fs.existsSync('./results/_summary.json')) {
+      const summaryFile = fs.readFileSync(FILE_RESULTS, 'utf8');
+      summaryData = summaryFile ? JSON.parse(summaryFile) : summaryData;
+    }
+
+    const attempt = {
+      timestamp: new Date(),
+      result,
+      isSuccessful: isGoalState(result, DECK_GOAL),
+    };
+
+    if (summaryData[fileKey]) {
+      summaryData[fileKey].attempts.push(attempt);
+    } else {
+      summaryData[fileKey] = {
+        fileKey,
+        startingState,
+        ts: new Date(),
+        attempts: [attempt],
+      };
+    }
+
+    fs.writeFileSync(FILE_RESULTS, JSON.stringify(summaryData));
+    numAttempts = numAttempts - 1;
+  } while (numAttempts > 0);
+};
+
+main(process.argv.slice(2) ? Number(process.argv.slice(2)) : 1);
